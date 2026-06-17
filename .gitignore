@@ -1,0 +1,23 @@
+# Heavy dev/reference folders
+tools/
+Ref/
+Ref dress/
+.claude/
+
+# Asset backups
+assets/_basebackup/
+assets/_bases_beige_backup/
+assets/_broken_backup/
+assets/_semireal_backup/
+assets/_brow_src/
+assets/_brow_hair.png
+assets/_brow_hair_top.png
+assets/_browzoom.png
+assets/generated/
+
+# Vercel
+.vercel/
+
+# OS
+Thumbs.db
+.DS_Store

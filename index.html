@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Expires" content="0" />
+<title>Rebel Glam — Dress Up</title>
+<link rel="stylesheet" href="style.css?v=36" />
+</head>
+<body>
+  <div id="phone">
+    <header id="topbar">
+      <div class="bar-left">
+        <button class="icon-btn" id="btnHome" title="Trang chủ">‹</button>
+        <button class="icon-btn" id="btnReset" title="Reset">⟲</button>
+      </div>
+      <div id="title">REBEL<span>GLAM</span></div>
+      <div id="coins"><span class="gem">◈</span><span id="coinCount">1250</span></div>
+    </header>
+
+    <main id="stage">
+      <div id="bgGlow"></div>
+      <div id="dollWrap">
+        <div id="dollPose">
+          <div id="dollFx">
+            <img id="doll" src="" alt="character" />
+            <!-- các lớp item PNG sẽ được JS chèn vào đây -->
+          </div>
+        </div>
+      </div>
+      <div id="stageActions">
+        <button class="round-btn" id="btnShuffle" title="Ngẫu nhiên">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round">
+            <rect x="4" y="4" width="16" height="16" rx="4.5"/>
+            <circle cx="8.8" cy="8.8" r="1.25" fill="#fff" stroke="none"/>
+            <circle cx="15.2" cy="8.8" r="1.25" fill="#fff" stroke="none"/>
+            <circle cx="12" cy="12" r="1.25" fill="#fff" stroke="none"/>
+            <circle cx="8.8" cy="15.2" r="1.25" fill="#fff" stroke="none"/>
+            <circle cx="15.2" cy="15.2" r="1.25" fill="#fff" stroke="none"/>
+          </svg>
+        </button>
+        <button class="round-btn" id="btnSave" title="Lưu look">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round">
+            <path d="M7 4h8.5L19 7.5V19a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z"/>
+            <path d="M8.5 4v4h6V4.5"/>
+            <path fill="#fff" stroke="none" d="M12 11.6c1-1 3.1-.4 3.1 1.3 0 1.4-2 2.7-3.1 3.5-1.1-.8-3.1-2.1-3.1-3.5 0-1.7 2.1-2.3 3.1-1.3z"/>
+          </svg>
+        </button>
+        <button class="round-btn" id="btnSnap" title="Chụp look">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round">
+            <path d="M4 8.5h3L8.4 6h7.2L17 8.5h3a1 1 0 0 1 1 1V18a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5a1 1 0 0 1 1-1z"/>
+            <circle cx="12" cy="13.2" r="3.1"/>
+          </svg>
+        </button>
+      </div>
+      <div id="flash"></div>
+    </main>
+
+    <section id="panel">
+      <div id="items"></div>
+      <nav id="tabs"></nav>
+      <nav id="groups"></nav>
+    </section>
+
+    <!-- MÀN HÌNH CHÍNH (Home) — nhân vật look hiện tại làm nền -->
+    <div id="home">
+      <div id="homeChar"></div>            <!-- nhân vật (look hiện tại) — JS dựng -->
+      <div class="home-top">
+        <div class="home-logo-sm">REBEL<span>GLAM</span></div>
+        <div class="home-coins"><span class="gem">◈</span><span id="homeCoinCount">1250</span></div>
+      </div>
+
+      <!-- Bộ sưu tập: 1 icon bên trái -->
+      <button class="home-side" id="goCollection" title="Bộ sưu tập">
+        <span class="hs-ic">
+          <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+            <rect x="13" y="15.5" width="18" height="21" rx="3.2" fill="#fff" opacity=".5"/>
+            <rect x="16.5" y="12" width="18" height="23" rx="3.2" fill="#fff"/>
+            <path fill="#ff9ec8" d="M25.5 30.2l-4.2-3.9c-1.8-1.7-.6-4.7 1.9-4.7 1 0 1.8.5 2.3 1.3.5-.8 1.3-1.3 2.3-1.3 2.5 0 3.7 3 1.9 4.7z"/>
+          </svg>
+        </span>
+      </button>
+
+      <!-- 2 tính năng chính: icon góc dưới -->
+      <div class="home-actions">
+        <button class="home-fab fab-dress" id="goDress" title="Phối đồ">
+          <span class="fab-ic">
+            <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+              <path fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"
+                d="M24 9.5c-1.7 0-3 1.2-3 2.7 0 .9.5 1.6 1.2 2.1"/>
+              <path fill="#fff" d="M24 13.5 15 20.5l2.8 2.6-3.4 11.6c-.3 1.1.5 2.1 1.6 2.1h15.0c1.1 0 1.9-1 1.6-2.1l-3.4-11.6 2.8-2.6z"/>
+              <path fill="#ff9ec8" d="M19.2 24.4c1.5.7 3.1 1 4.8 1s3.3-.3 4.8-1l.7 2.4c-1.7.8-3.6 1.2-5.5 1.2s-3.8-.4-5.5-1.2z"/>
+              <circle cx="33" cy="14" r="1.5" fill="#fff" opacity=".9"/>
+            </svg>
+          </span>
+        </button>
+        <button class="home-fab fab-pk" id="goPK" title="PK VS">
+          <span class="fab-ic">
+            <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+              <line x1="15.5" y1="34" x2="29.5" y2="17" stroke="#fff" stroke-width="3.2" stroke-linecap="round"/>
+              <line x1="32.5" y1="34" x2="18.5" y2="17" stroke="#fff" stroke-width="3.2" stroke-linecap="round"/>
+              <path fill="#fff" d="M30 12.2l1.25 2.55 2.8.4-2.05 1.97.49 2.83-2.49-1.32-2.49 1.32.49-2.83-2.05-1.97 2.8-.4z"/>
+              <path fill="#fff" d="M18 12.2l1.25 2.55 2.8.4-2.05 1.97.49 2.83-2.49-1.32-2.49 1.32.49-2.83-2.05-1.97 2.8-.4z"/>
+              <circle cx="24" cy="35.5" r="1.4" fill="#fff" opacity=".9"/>
+            </svg>
+          </span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+
+  <script src="assets.js?v=36"></script>
+  <script src="icons.js?v=36"></script>
+  <script src="sound.js?v=36"></script>
+  <script src="game.js?v=36"></script>
+  <script src="features.js?v=36"></script>
+</body>
+</html>

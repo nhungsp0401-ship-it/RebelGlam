@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Rebel Glam — Dress Up Demo</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="phone">
+    <!-- Top bar -->
+    <header id="topbar">
+      <button class="icon-btn" id="btnReset" title="Reset">⟲</button>
+      <div id="title">REBEL<span>GLAM</span></div>
+      <div id="coins"><span class="gem">◈</span><span id="coinCount">1250</span></div>
+    </header>
+
+    <!-- Stage: nhân vật -->
+    <main id="stage">
+      <div id="bgGlow"></div>
+      <div id="dollWrap">
+        <svg id="doll" viewBox="0 0 300 520" xmlns="http://www.w3.org/2000/svg" aria-label="character">
+          <!-- layers được JS đổ vào theo thứ tự z-index -->
+          <g id="layer-back"></g>
+          <g id="layer-body"></g>
+          <g id="layer-bottom"></g>
+          <g id="layer-shoes"></g>
+          <g id="layer-top"></g>
+          <g id="layer-dress"></g>
+          <g id="layer-hair"></g>
+          <g id="layer-face"></g>
+          <g id="layer-accessory"></g>
+        </svg>
+      </div>
+      <div id="stageActions">
+        <button class="round-btn" id="btnShuffle" title="Ngẫu nhiên">🎲</button>
+        <button class="round-btn" id="btnSnap" title="Chụp look">📷</button>
+      </div>
+      <div id="flash"></div>
+    </main>
+
+    <!-- Bảng chọn đồ -->
+    <section id="panel">
+      <div id="swatches"></div>
+      <div id="items"></div>
+      <nav id="tabs"></nav>
+    </section>
+  </div>
+
+  <div id="toast"></div>
+
+  <script src="data.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>

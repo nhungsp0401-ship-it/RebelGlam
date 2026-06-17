@@ -1,0 +1,24 @@
+# Heavy dev/reference folders — not needed by the app
+tools/
+Ref/
+Ref dress/
+.claude/
+
+# Asset backups (not referenced by index.html)
+assets/_basebackup/
+assets/_bases_beige_backup/
+assets/_broken_backup/
+assets/_semireal_backup/
+assets/_brow_src/
+assets/_brow_hair.png
+assets/_brow_hair_top.png
+assets/_browzoom.png
+assets/generated/
+
+# Unused alternate variants (index.html only loads assets/icons/game/features.js)
+index_svg.html
+style_svg.css
+data.js
+data_svg.js
+game_svg.js
+gallery.html

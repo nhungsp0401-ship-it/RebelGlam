@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Rebel Glam — Asset Gallery</title>
+<style>
+  :root{--bg:#120c18;--card:#1d1528;--line:#322642;--pink:#e8174d;--gold:#f6c945;--txt:#f4f1fb;--muted:#9b91b5}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font-family:"Segoe UI",system-ui,sans-serif;padding:28px}
+  h1{font-style:italic;font-weight:900;background:linear-gradient(90deg,var(--pink),var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent;margin:0 0 4px}
+  .sub{color:var(--muted);margin:0 0 26px;font-size:14px}
+  h2{margin:30px 0 14px;font-size:16px;color:var(--gold);border-bottom:1px solid var(--line);padding-bottom:8px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;transition:.15s}
+  .card:hover{transform:translateY(-3px);box-shadow:0 8px 22px #0007;border-color:var(--pink)}
+  .thumb{height:180px;display:flex;align-items:center;justify-content:center;
+    background-image:linear-gradient(45deg,#2a2235 25%,transparent 25%),linear-gradient(-45deg,#2a2235 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#2a2235 75%),linear-gradient(-45deg,transparent 75%,#2a2235 75%);
+    background-size:18px 18px;background-position:0 0,0 9px,9px -9px,-9px 0}
+  .thumb.char{background:linear-gradient(160deg,#241830,#1a1226)}
+  .thumb img{max-width:92%;max-height:92%;object-fit:contain;filter:drop-shadow(0 4px 8px #0008)}
+  .nm{padding:8px 10px;font-size:11px;color:var(--muted);border-top:1px solid var(--line);text-align:center;word-break:break-all}
+  .count{color:var(--pink);font-weight:700}
+</style>
+</head>
+<body>
+  <h1>REBEL GLAM — Asset Gallery</h1>
+  <p class="sub">Gen bằng <b>gemini-3-pro-image-preview</b> theo style ref · <span class="count">24</span> asset gốc · nền caro = vùng trong suốt</p>
+  <div id="root"></div>
+
+<script>
+const CHARS = ["doll_base","look_rebel_glam","look_princess_pink"];
+const ITEMS = {
+  "Tóc":["hair_mohawk_pink","hair_long_curls","hair_bob_black","hair_ponytail_purple"],
+  "Áo":["top_leather_jacket","top_crop_sparkle","top_corset_white"],
+  "Đầm":["dress_tulle_pink","dress_punk_black","dress_sequin_silver"],
+  "Quần / Chân váy":["bottom_skinny_jeans","bottom_tutu_pink","bottom_plaid_skirt"],
+  "Giày":["shoes_heels_black","shoes_boots_combat","shoes_heels_pink","shoes_sneakers_glitter"],
+  "Phụ kiện":["acc_tiara","acc_choker","acc_sunglasses","acc_earrings"],
+};
+function card(src,name,isChar){
+  return `<div class="card"><div class="thumb ${isChar?'char':''}"><img src="${src}" alt="${name}"></div><div class="nm">${name}</div></div>`;
+}
+let html = `<h2>Nhân vật & Look hoàn chỉnh</h2><div class="grid">`;
+html += CHARS.map(c=>card("assets/generated/characters/"+c+".png",c,true)).join("");
+html += `</div>`;
+for(const [grp,ids] of Object.entries(ITEMS)){
+  html += `<h2>${grp}</h2><div class="grid">`;
+  html += ids.map(i=>card("assets/generated/items/"+i+".png",i,false)).join("");
+  html += `</div>`;
+}
+document.getElementById("root").innerHTML = html;
+</script>
+</body>
+</html>

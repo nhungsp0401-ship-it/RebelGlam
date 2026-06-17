@@ -1,0 +1,483 @@
+:root{
+  --bg:#fff5fa; --panel:#ffffff; --panel2:#ffe8f3;
+  --pink:#ff77ab; --purple:#c08cf0; --gold:#ffb86b;
+  --txt:#5a3a52; --muted:#c293b3; --line:#ffd9e8;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:#ffe4ef;font-family:"Segoe UI",system-ui,sans-serif;color:var(--txt);
+  display:flex;align-items:center;justify-content:center;overflow:hidden}
+
+#phone{width:390px;height:780px;max-height:100vh;background:var(--bg);position:relative;
+  display:flex;flex-direction:column;overflow:hidden;
+  box-shadow:0 0 60px rgba(255,119,171,.40);border-radius:26px}
+@media(max-width:420px){#phone{width:100vw;height:100vh;border-radius:0}}
+
+#topbar{height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;
+  background:linear-gradient(90deg,#ffd9ea,#ffe9d6);border-bottom:1px solid var(--line);z-index:5}
+.bar-left{display:flex;align-items:center;gap:8px}
+#btnHome{font-size:24px;line-height:1;padding-bottom:3px}
+#title{font-weight:900;font-style:italic;letter-spacing:1px;font-size:20px;
+  background:linear-gradient(90deg,var(--pink),var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent}
+#title span{color:var(--purple);-webkit-text-fill-color:var(--purple)}
+#coins{display:flex;align-items:center;gap:5px;background:#fff;border:1px solid var(--line);color:var(--txt);padding:5px 12px;border-radius:20px;font-weight:700;font-size:14px;box-shadow:0 2px 6px rgba(255,119,171,.18)}
+.gem{color:var(--gold)}
+.icon-btn{background:#fff;border:1px solid var(--line);color:var(--pink);width:36px;height:36px;border-radius:12px;font-size:18px;cursor:pointer;box-shadow:0 2px 6px rgba(255,119,171,.18)}
+.icon-btn:active{transform:scale(.92)}
+#audioCtrls{display:flex;align-items:center;gap:6px}
+.audio-btn{background:#fff;border:1px solid var(--line);width:32px;height:32px;border-radius:11px;font-size:15px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(255,119,171,.18);transition:transform .08s,opacity .15s}
+.audio-btn:active{transform:scale(.9)}
+.audio-btn.off{opacity:.45;filter:grayscale(.6)}
+
+#stage{flex:1;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden}
+#bgGlow{position:absolute;inset:0;background:
+  radial-gradient(circle at 50% 25%,rgba(255,182,213,.55),transparent 55%),
+  radial-gradient(circle at 75% 82%,rgba(192,140,240,.40),transparent 55%),
+  linear-gradient(180deg,#fff0f7,#ffe7f1)}
+#bgGlow::after{content:"";position:absolute;inset:0;
+  background-image:radial-gradient(rgba(255,120,175,.10) 1px,transparent 1px);background-size:22px 22px}
+
+/* khung nhân vật: #dollWrap = CAMERA (zoom/pan theo trạng thái),
+   #dollPose = CHUYỂN ĐỘNG (thở / pose) — tách riêng để không giật khi zoom.
+   Camera dùng thuộc tính riêng `scale`/`translate` (KHÔNG dùng `transform`):
+   `transition:transform` bị kẹt ở identity trên engine này, còn scale/translate
+   transition độc lập nên mượt và ổn định. */
+/* #dollWrap chỉ lo CAMERA (scale/translate) — KHÔNG đặt filter ở đây:
+   drop-shadow trên chính phần tử đang scale phải vẽ lại mỗi frame -> giật khi zoom.
+   Chuyển shadow xuống #dollPose + will-change để GPU cache layer, zoom mượt. */
+#dollWrap{position:relative;height:98%;aspect-ratio:768/1365;
+  transform-origin:50% 0;scale:1;translate:0 0;will-change:scale,translate;
+  transition:scale .6s cubic-bezier(.22,.61,.36,1), translate .6s cubic-bezier(.22,.61,.36,1)}
+#dollPose{position:absolute;inset:0;transform-origin:50% 95%;will-change:transform;
+  filter:drop-shadow(0 12px 16px rgba(214,98,150,.32));
+  animation:idle 3.4s linear infinite}
+/* #dollFx: lớp riêng cho phản hồi 1 nhịp (pose/blink/bite/react) -> compose với idle, không giật */
+#dollFx{position:absolute;inset:0;will-change:transform}
+
+/* ---- CAMERA theo trạng thái "feeling" ---- */
+#stage.pose-full   #dollWrap,
+#stage.pose-outfit #dollWrap{scale:1;   translate:0 0}
+#stage.pose-hair   #dollWrap{scale:1.6; translate:0 27%}
+#stage.pose-face   #dollWrap{scale:2.5; translate:0 22%}
+#stage.pose-hair #stageActions,
+#stage.pose-face #stageActions{opacity:.45}
+
+/* ---- CHUYỂN ĐỘNG nền (continuous), ghi đè idle mặc định ---- */
+#dollPose.cont-photo{animation:posePhoto 3.8s linear infinite}
+#dollPose.cont-sway {animation:swayHip 3.4s linear infinite}
+
+/* ---- PHẢN HỒI một nhịp (transient) — chạy trên #dollFx, easing mềm để mượt ---- */
+#dollFx.fx-react{animation:react .7s cubic-bezier(.25,.9,.3,1)}
+#dollFx.fx-pose {animation:poseSnap .9s cubic-bezier(.25,.9,.3,1)}
+#dollFx.fx-blink{animation:blink .34s ease;transform-origin:50% 8%}
+#dollFx.fx-bite {animation:lipbite .5s ease;transform-origin:50% 9%}
+/* showOff: nghiêng người khoe đồ — CHỈ xoay (không scale/không bob) quanh chân nên
+   không nảy ngực, cả người xoay cùng nhau nên layer không bị lệch. */
+#dollFx.fx-show {animation:showOff .8s cubic-bezier(.3,.7,.3,1);transform-origin:50% 95%}
+
+/* idle: đung đưa kiểu SIN, chạy `linear`, điểm nối loop đặt ở GIỮA (0°, lúc đi nhanh
+   nhất) -> vận tốc liên tục qua mối loop = không giật; mẫu sin nên không khựng ở 2 mép
+   (hết cảm giác "tim đập" của ease-in-out). */
+@keyframes idle{
+  0%{transform:rotate(0deg)}
+  12.5%{transform:rotate(.64deg)}
+  25%{transform:rotate(.9deg)}
+  37.5%{transform:rotate(.64deg)}
+  50%{transform:rotate(0deg)}
+  62.5%{transform:rotate(-.64deg)}
+  75%{transform:rotate(-.9deg)}
+  87.5%{transform:rotate(-.64deg)}
+  100%{transform:rotate(0deg)}}
+/* LƯU Ý: KHÔNG cho layer váy/quần chuyển động ĐỘC LẬP với thân.
+   Layer là ảnh full-canvas căn khít body; nếu xoay/skew riêng (lệch pha) thì cả váy
+   lắc lệch khỏi thân -> "lỗi layer" váy rời người. Layer là con của #dollPose nên đã
+   tự đung đưa CÙNG thân (glued). Để secondary-motion riêng -> phải tách mesh skirt, không
+   làm được trên 1 ảnh phẳng. */
+/* swayHip: đung đưa khẽ khi chỉnh nét mặt (sin/linear, loop ở giữa) */
+@keyframes swayHip{
+  0%{transform:rotate(0deg)}
+  12.5%{transform:rotate(.354deg)}
+  25%{transform:rotate(.5deg)}
+  37.5%{transform:rotate(.354deg)}
+  50%{transform:rotate(0deg)}
+  62.5%{transform:rotate(-.354deg)}
+  75%{transform:rotate(-.5deg)}
+  87.5%{transform:rotate(-.354deg)}
+  100%{transform:rotate(0deg)}}
+/* posePhoto: đung đưa + nhún hông nhẹ tạo dáng khi thử trang phục (sin/linear, loop ở giữa) */
+@keyframes posePhoto{
+  0%{transform:translateX(0) rotate(0deg)}
+  12.5%{transform:translateX(1.4px) rotate(.71deg)}
+  25%{transform:translateX(2px) rotate(1deg)}
+  37.5%{transform:translateX(1.4px) rotate(.71deg)}
+  50%{transform:translateX(0) rotate(0deg)}
+  62.5%{transform:translateX(-1.4px) rotate(-.71deg)}
+  75%{transform:translateX(-2px) rotate(-1deg)}
+  87.5%{transform:translateX(-1.4px) rotate(-.71deg)}
+  100%{transform:translateX(0) rotate(0deg)}}
+@keyframes react{
+  0%{transform:translateY(0) scale(1,1)}
+  35%{transform:translateY(-5px) scale(.995,1.015)}
+  70%{transform:translateY(0) scale(1.008,.997)}
+  100%{transform:translateY(0) scale(1,1)}}
+@keyframes poseSnap{
+  0%{transform:scale(1) rotate(0deg)}
+  35%{transform:scale(1.012) rotate(-1.3deg)}
+  68%{transform:scale(1.006) rotate(.9deg)}
+  100%{transform:scale(1) rotate(0deg)}}
+/* showOff: nghiêng người khoe đồ rồi về thẳng — mượt, chỉ xoay, không scale -> không nảy */
+@keyframes showOff{
+  0%{transform:rotate(0deg)}
+  40%{transform:rotate(2.4deg)}
+  72%{transform:rotate(-.7deg)}
+  100%{transform:rotate(0deg)}}
+/* blink: ép nhẹ chiều dọc quanh vùng mắt -> như chớp mắt khi đang zoom mặt */
+@keyframes blink{
+  0%,40%{transform:scaleY(1)}
+  50%{transform:scaleY(.9)}
+  60%,100%{transform:scaleY(1)}}
+/* lipbite: nghiêng đầu nhẹ, điệu đà như đang cắn môi */
+@keyframes lipbite{
+  0%{transform:rotate(0) scale(1)}
+  35%{transform:rotate(-1.6deg) scale(1.012)}
+  65%{transform:rotate(1.2deg) scale(1.012)}
+  100%{transform:rotate(0) scale(1)}}
+#doll{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;z-index:1}
+.layer{position:absolute;inset:0;pointer-events:none;transition:opacity .15s}
+.layer img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block}
+
+#stageActions{position:absolute;right:12px;top:12px;display:flex;flex-direction:column;gap:10px;z-index:90}
+.round-btn{width:46px;height:46px;border-radius:50%;border:none;font-size:20px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(145deg,var(--purple),var(--pink));color:#fff;box-shadow:0 4px 14px rgba(255,119,171,.45)}
+.round-btn svg{width:25px;height:25px;display:block;filter:drop-shadow(0 1px 1px rgba(0,0,0,.12))}
+.round-btn:active{transform:scale(.9)}
+
+/* ---- Feeling: reaction + sparkle + nhún ---- */
+.reaction{position:absolute;left:50%;top:16%;transform:translateX(-50%);z-index:95;
+  background:linear-gradient(135deg,var(--pink),var(--purple));color:#fff;font-weight:800;font-size:15px;
+  padding:7px 16px;border-radius:20px;box-shadow:0 4px 16px rgba(232,23,77,.5);pointer-events:none;
+  animation:reactPop 1.1s ease forwards;white-space:nowrap}
+@keyframes reactPop{
+  0%{opacity:0;transform:translateX(-50%) translateY(10px) scale(.6)}
+  20%{opacity:1;transform:translateX(-50%) translateY(0) scale(1.08)}
+  35%{transform:translateX(-50%) translateY(0) scale(1)}
+  80%{opacity:1}
+  100%{opacity:0;transform:translateX(-50%) translateY(-18px) scale(1)}}
+.particle{position:absolute;z-index:94;pointer-events:none;animation:floatUp 1s ease-out forwards;
+  filter:drop-shadow(0 1px 2px rgba(0,0,0,.3))}
+@keyframes floatUp{
+  0%{opacity:0;transform:translate(0,0) scale(.4) rotate(0)}
+  15%{opacity:1}
+  100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(1.1) rotate(40deg)}}
+#dollWrap.pop{animation:dollPop .4s ease}
+@keyframes dollPop{0%{transform:scale(1)}30%{transform:scale(1.035)}100%{transform:scale(1)}}
+
+/* hair-glow: vầng sáng lan ở phần tóc khi chọn kiểu tóc */
+.hair-glow{position:absolute;left:50%;top:30%;transform:translate(-50%,-50%);
+  width:180px;height:180px;border-radius:50%;pointer-events:none;z-index:93;mix-blend-mode:screen;
+  background:radial-gradient(circle,rgba(255,200,120,.65),rgba(255,119,171,.38) 45%,transparent 70%);
+  animation:hairGlow .95s ease-out forwards}
+@keyframes hairGlow{
+  0%{opacity:0;transform:translate(-50%,-50%) scale(.4)}
+  30%{opacity:1}
+  100%{opacity:0;transform:translate(-50%,-50%) scale(1.45)}}
+
+/* ---- FEELING khi chọn item: item loé sáng + hào quang glam (KHÔNG biến dạng người) ---- */
+/* item vừa mặc sáng bừng lên rồi dịu lại — chỉ chỉnh filter, không transform -> không lệch layer */
+.layer.just-equipped img,#doll.just-equipped{animation:equipShine .7s ease-out}
+@keyframes equipShine{
+  0%{filter:brightness(1.16) saturate(1.05)}
+  45%{filter:brightness(1.06) saturate(1.02)}
+  100%{filter:brightness(1) saturate(1)}}
+/* vầng hào quang glam toả quanh người khi mặc trang phục/phụ kiện — dịu, mờ nhẹ */
+.equip-glow{position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);
+  width:70%;height:60%;border-radius:50%;pointer-events:none;z-index:93;mix-blend-mode:screen;
+  background:radial-gradient(ellipse at center,rgba(255,190,222,.26),rgba(255,214,170,.12) 52%,transparent 70%);
+  animation:equipGlow .75s ease-out forwards}
+@keyframes equipGlow{
+  0%{opacity:0;transform:translate(-50%,-50%) scale(.8)}
+  35%{opacity:.7}
+  100%{opacity:0;transform:translate(-50%,-50%) scale(1.12)}}
+
+#flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:100}
+#flash.go{animation:flash .4s ease}
+@keyframes flash{0%{opacity:0}20%{opacity:.85}100%{opacity:0}}
+
+#panel{background:var(--panel);border-top:1px solid var(--line);padding:10px 0 0;display:flex;flex-direction:column;
+  box-shadow:0 -8px 24px rgba(255,119,171,.18)}
+/* lưới chọn item: 5 cột × 3 hàng cố định, cuộn dọc khi nhiều item */
+#items{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:10px;
+  grid-auto-rows:80px;height:280px;overflow-y:auto;overflow-x:hidden;
+  scroll-behavior:smooth;scrollbar-width:thin;scrollbar-color:#ffaecf transparent}
+.item{border-radius:18px;background:var(--panel2);border:2px solid transparent;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;transition:.12s;overflow:hidden;position:relative}
+.item img{max-width:94%;max-height:94%;object-fit:contain}
+.item .none{font-size:32px;color:var(--muted)}
+.item:active{transform:scale(.93)}
+.item.on{border-color:var(--pink);background:#ffe0ee;box-shadow:0 0 12px rgba(255,119,171,.45)}
+
+#tabs{display:flex;background:var(--panel2);border-top:1px solid var(--line);
+  overflow-x:auto;scrollbar-width:none;cursor:grab;user-select:none}
+#tabs::-webkit-scrollbar{height:0}
+#tabs.drag{cursor:grabbing}
+.tab{flex:1 0 auto;min-width:44px;padding:9px 6px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--muted)}
+.tab .ti{font-size:22px;transition:.15s;display:flex}
+.tab .ti svg{width:26px;height:26px;display:block}
+.group .gi svg{width:28px;height:28px;display:block}
+.tab.on{color:var(--pink)}
+.tab.on .ti{transform:translateY(-2px) scale(1.12);filter:drop-shadow(0 2px 6px rgba(255,119,171,.6))}
+
+/* nav cấp 1: 3 nhóm lớn */
+#groups{display:flex;background:#ffeaf4;border-top:1px solid var(--line)}
+.group{flex:1;padding:11px 4px;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;color:var(--muted);position:relative;transition:.15s}
+.group .gi{font-size:24px;transition:.15s}
+.group.on{color:var(--pink);background:linear-gradient(180deg,rgba(255,119,171,.20),transparent)}
+.group.on::after{content:"";position:absolute;top:0;left:18%;right:18%;height:3px;border-radius:0 0 3px 3px;
+  background:linear-gradient(90deg,var(--pink),var(--gold))}
+.group.on .gi{transform:scale(1.12);filter:drop-shadow(0 2px 6px rgba(255,119,171,.6))}
+
+#toast{position:fixed;bottom:40px;left:50%;transform:translateX(-50%) translateY(20px);opacity:0;
+  background:linear-gradient(135deg,var(--pink),var(--purple));color:#fff;padding:10px 18px;border-radius:20px;font-size:13px;font-weight:600;pointer-events:none;transition:.25s;border:1px solid #fff6;box-shadow:0 6px 18px rgba(255,119,171,.4);z-index:200}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+::-webkit-scrollbar{height:0;width:0}
+#items::-webkit-scrollbar{width:7px}
+#items::-webkit-scrollbar-thumb{background:#ffaecf;border-radius:4px}
+#items::-webkit-scrollbar-thumb:hover{background:#ff8fbd}
+
+/* ============================================================
+   TÍNH NĂNG MỞ RỘNG — doll rời, tủ đồ, đấu PK
+   ============================================================ */
+/* doll dựng rời (preview / đối thủ) */
+.rg-doll{position:relative;width:100%;height:100%;aspect-ratio:768/1365}
+.rg-doll .rg-pose{position:absolute;inset:0}
+.rg-doll .rg-base{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+
+/* overlay chung */
+.rg-overlay{position:absolute;inset:0;z-index:300;display:flex;flex-direction:column;
+  align-items:center;gap:12px;padding:18px 16px 16px;overflow-y:auto;
+  background:linear-gradient(180deg,#fff0f7,#ffe2ef);
+  opacity:0;transform:scale(.98);transition:.22s ease}
+.rg-overlay.in{opacity:1;transform:scale(1)}
+.pk-head{text-align:center;margin-top:6px}
+.pk-head h2{margin:0;font-size:22px;font-weight:900;font-style:italic;
+  background:linear-gradient(90deg,var(--pink),var(--purple));-webkit-background-clip:text;background-clip:text;color:transparent}
+.pk-sub{margin:4px 0 0;font-size:12.5px;color:var(--muted)}
+.pk-row{display:flex;gap:10px;width:100%;margin-top:auto}
+.pk-btn{flex:1;border:none;cursor:pointer;border-radius:16px;padding:13px 10px;font-size:15px;font-weight:800;
+  color:#fff;background:linear-gradient(145deg,var(--purple),var(--pink));box-shadow:0 5px 16px rgba(255,119,171,.45)}
+.pk-btn:active{transform:scale(.96)}
+.pk-btn:disabled{opacity:.5}
+.pk-btn.ghost{background:#fff;color:var(--pink);border:1.5px solid var(--line);box-shadow:none}
+
+/* ---- tủ đồ (look đã lưu) ---- */
+.save-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%;align-content:start;
+  flex:1 1 auto;min-height:0;overflow-y:auto;padding:2px 2px 6px;
+  scrollbar-width:thin;scrollbar-color:#ffaecf transparent}
+.save-grid::-webkit-scrollbar{width:6px}
+.save-grid::-webkit-scrollbar-thumb{background:#ffaecf;border-radius:3px}
+.save-card{position:relative;background:#fff;border:1.5px solid var(--line);border-radius:16px;padding:6px;
+  cursor:pointer;transition:transform .12s,box-shadow .15s,opacity .18s;box-shadow:0 3px 10px rgba(255,119,171,.15)}
+.save-card:hover{border-color:var(--pink);box-shadow:0 5px 16px rgba(255,119,171,.30)}
+.save-card:active{transform:scale(.95)}
+.save-card.removing{opacity:0;transform:scale(.8)}
+.save-thumb{height:118px;display:flex;align-items:flex-end;justify-content:center;overflow:hidden;
+  background:linear-gradient(180deg,#fff6fb,#ffe9f3);border-radius:11px}
+.save-thumb .rg-doll{height:150px;width:auto}
+.save-name{text-align:center;font-size:11.5px;font-weight:700;color:var(--txt);margin-top:5px}
+.save-del{position:absolute;top:5px;right:5px;width:22px;height:22px;border-radius:50%;border:1.5px solid #fff;cursor:pointer;
+  background:rgba(255,119,171,.92);color:#fff;font-size:11px;line-height:1;font-weight:900;
+  box-shadow:0 2px 6px rgba(255,119,171,.5);transition:.12s}
+.save-del:hover{background:var(--pink);transform:scale(1.1)}
+
+/* empty-state tủ đồ */
+.save-empty{flex:1 1 auto;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:6px;text-align:center;color:var(--muted)}
+.save-empty .se-ic{font-size:56px;filter:drop-shadow(0 6px 14px rgba(255,119,171,.45));animation:emptyBob 2.6s ease-in-out infinite}
+.save-empty p{margin:0;font-size:16px;font-weight:800;color:var(--txt)}
+.save-empty span{font-size:12.5px;max-width:200px}
+@keyframes emptyBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+.wardrobe-foot{margin-top:6px}
+
+/* ---- chọn địa điểm ---- */
+.pk-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;width:100%}
+.loc-card{background:#fff;border:2px solid var(--line);border-radius:16px;padding:12px 4px;text-align:center;
+  display:flex;flex-direction:column;align-items:center;gap:5px;transition:.15s}
+.loc-ic{font-size:28px;line-height:1}
+.loc-lb{font-size:11.5px;font-weight:700;color:var(--txt)}
+.loc-card.hot{transform:scale(1.07);border-color:var(--pink);background:#ffe6f1;box-shadow:0 0 16px rgba(255,119,171,.6)}
+.loc-card.won{transform:scale(1.12);border-color:var(--gold);background:linear-gradient(145deg,#fff0d6,#ffe0ee);
+  box-shadow:0 0 22px rgba(255,184,107,.8);animation:locWon .85s ease}
+@keyframes locWon{0%,100%{transform:scale(1.12)}40%{transform:scale(1.22) rotate(-2deg)}70%{transform:scale(1.16) rotate(2deg)}}
+
+/* ---- HUD trong trận: CHỈ đồng hồ + nút Xong, chip nhỏ nổi trên cùng, không che nhân vật ---- */
+#pkHud{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:120;
+  display:flex;align-items:center;gap:8px}
+.pk-timepill{display:flex;align-items:center;gap:5px;background:rgba(255,255,255,.94);
+  border:1.5px solid var(--line);border-radius:14px;padding:5px 12px;box-shadow:0 4px 12px rgba(255,119,171,.3)}
+.pk-clock{font-size:15px;line-height:1}
+.pk-time{font-size:19px;font-weight:900;color:var(--purple);min-width:46px;text-align:center;letter-spacing:.5px}
+.pk-time.danger{color:#ff3d6e;animation:pulse .8s infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+.pk-finish{border:none;cursor:pointer;border-radius:14px;padding:7px 14px;font-size:13px;font-weight:800;color:#fff;
+  background:linear-gradient(145deg,var(--purple),var(--pink));box-shadow:0 4px 12px rgba(255,119,171,.45)}
+.pk-finish:active{transform:scale(.93)}
+.vs-break{display:flex;flex-direction:column;gap:1px;margin-top:3px;font-size:10px;color:var(--txt);text-align:center;line-height:1.3}
+.vs-break b{color:var(--pink)}
+
+/* ---- đấu trường chấm điểm: sân khấu mơ màng, KHÔNG nền trắng ---- */
+.rg-score{background:
+  radial-gradient(125% 85% at 50% -8%, #ffe6f3 0%, #ffd6ec 34%, #f4d3ff 68%, #e7d0ff 100%)}
+.rg-score::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:0;
+  background:
+    radial-gradient(48% 38% at 24% 40%, rgba(255,140,195,.45), transparent 70%),
+    radial-gradient(48% 38% at 77% 42%, rgba(255,198,120,.42), transparent 70%),
+    radial-gradient(rgba(255,255,255,.55) 1px, transparent 1.5px);
+  background-size:auto,auto,17px 17px}
+.rg-score > *{position:relative;z-index:1}
+
+.vs-arena{display:flex;align-items:stretch;justify-content:center;gap:2px;width:100%;flex:1;min-height:0}
+.vs-side{flex:1;position:relative;display:flex;flex-direction:column;align-items:center;min-width:0;
+  padding:4px 2px 8px;transition:.35s}
+.vs-stage{position:relative;flex:1;min-height:0;width:100%;display:flex;align-items:flex-end;justify-content:center}
+/* chùm sáng sân khấu phía sau nhân vật */
+.vs-stage::before{content:"";position:absolute;left:50%;top:3%;transform:translateX(-50%);z-index:0;
+  width:84%;height:94%;pointer-events:none;
+  border-radius:50% 50% 44% 44%/62% 62% 38% 38%;
+  background:radial-gradient(ellipse at 50% 42%, rgba(255,150,200,.50), rgba(255,150,200,0) 68%)}
+.vs-side.bot .vs-stage::before{background:radial-gradient(ellipse at 50% 42%, rgba(255,200,125,.50), rgba(255,200,125,0) 68%)}
+/* vũng sáng dưới chân */
+.vs-stage::after{content:"";position:absolute;bottom:1%;left:50%;transform:translateX(-50%);z-index:0;
+  width:72%;height:24px;border-radius:50%;pointer-events:none;
+  background:radial-gradient(ellipse,rgba(255,150,200,.55),transparent 72%)}
+.vs-side.bot .vs-stage::after{background:radial-gradient(ellipse,rgba(255,200,125,.55),transparent 72%)}
+.vs-stage .rg-doll{position:relative;z-index:1;height:100%;width:auto;max-height:300px;
+  filter:drop-shadow(0 10px 14px rgba(180,90,140,.35))}
+
+.vs-name{margin-top:8px;font-size:13px;font-weight:800;color:#fff;padding:3px 14px;border-radius:20px;
+  background:linear-gradient(135deg,var(--pink),var(--purple));box-shadow:0 3px 10px rgba(255,119,171,.4);
+  max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vs-side.bot .vs-name{background:linear-gradient(135deg,var(--gold),var(--pink))}
+.vs-score{font-size:40px;font-weight:900;font-style:italic;line-height:1.05;margin-top:4px;
+  background:linear-gradient(180deg,#fff 4%,#ffd36b 52%,#ff77ab 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 2px 5px rgba(255,119,171,.55))}
+
+.vs-mid{align-self:center;position:relative;z-index:2;font-size:24px;font-weight:900;font-style:italic;color:#fff;
+  width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:0 0 auto;
+  background:linear-gradient(145deg,#ff5d8f,#c08cf0);
+  box-shadow:0 5px 18px rgba(192,140,240,.7),0 0 0 4px rgba(255,255,255,.6),0 0 0 7px rgba(255,184,107,.55);
+  animation:vsPulse 1s ease-in-out infinite}
+@keyframes vsPulse{0%,100%{transform:scale(1) rotate(-6deg)}50%{transform:scale(1.13) rotate(6deg)}}
+
+/* người thắng: toả sáng vàng + vương miện; người thua: mờ đi */
+.vs-side.winner{transform:translateY(-6px) scale(1.03)}
+.vs-side.winner .vs-stage::before{
+  background:radial-gradient(ellipse at 50% 42%, rgba(255,212,120,.9), rgba(255,170,90,.12) 70%);
+  animation:winGlow 1.4s ease-in-out infinite}
+.vs-side.winner .vs-stage::after{background:radial-gradient(ellipse,rgba(255,205,120,.8),transparent 72%)}
+.vs-side.winner .vs-name::after{content:" 👑"}
+@keyframes winGlow{0%,100%{opacity:.85}50%{opacity:1}}
+.vs-side.loser{opacity:.5;filter:grayscale(.5)}
+
+.vs-spark{position:absolute;z-index:310;font-size:22px;pointer-events:none;color:var(--gold);
+  filter:drop-shadow(0 0 4px rgba(255,119,171,.8));animation:vsSpark .6s ease-out forwards}
+@keyframes vsSpark{0%{opacity:0;transform:translate(0,0) scale(.3)}25%{opacity:1}
+  100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(1.3) rotate(60deg)}}
+
+/* ---- băng kết quả ---- */
+.pk-result{width:100%;text-align:center;border-radius:18px;padding:14px;color:#fff;
+  animation:resPop .5s cubic-bezier(.34,1.5,.5,1)}
+.pk-result.win{background:linear-gradient(145deg,#ff9d3c,#ff5d8f)}
+.pk-result.draw{background:linear-gradient(145deg,#c08cf0,#8fa8ff)}
+.pk-result.lose{background:linear-gradient(145deg,#9aa3b2,#6b7280)}
+@keyframes resPop{0%{opacity:0;transform:scale(.7)}100%{opacity:1;transform:scale(1)}}
+.pk-rtitle{font-size:22px;font-weight:900;font-style:italic}
+.pk-rsub{font-size:12.5px;opacity:.95;margin-top:2px}
+.pk-reward{margin-top:6px;font-size:16px;font-weight:900}
+
+/* ---- màn loading ghép đối thủ ---- */
+.pk-exit{position:absolute;top:12px;right:12px;z-index:5;width:30px;height:30px;border-radius:50%;
+  border:1.5px solid var(--line);background:#fff;color:var(--pink);font-size:14px;font-weight:900;cursor:pointer;
+  box-shadow:0 2px 8px rgba(255,119,171,.25)}
+.pk-exit:active{transform:scale(.9)}
+.match-arena{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:22px}
+.match-side{flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;transition:.3s}
+.match-ava{position:relative;width:120px;height:120px;border-radius:50%;overflow:hidden;
+  background:linear-gradient(180deg,#fff6fb,#ffe0ee);border:3px solid var(--line);
+  box-shadow:0 6px 18px rgba(255,119,171,.35)}
+.match-ava .rg-doll{position:absolute;left:50%;top:8%;height:300%;width:auto;transform:translateX(-50%);aspect-ratio:768/1365}
+.match-name{font-size:14px;font-weight:800;color:var(--txt);max-width:120px;text-align:center;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.match-side.locked .match-ava{border-color:var(--gold);box-shadow:0 0 22px rgba(255,184,107,.8);animation:locWon .6s ease}
+.match-side.locked .match-name{color:var(--pink)}
+.match-vs{flex:0 0 auto;font-size:24px;font-weight:900;font-style:italic;color:#fff;
+  width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(145deg,#ff5d8f,#c08cf0);box-shadow:0 4px 14px rgba(192,140,240,.6);
+  animation:vsPulse 1s ease-in-out infinite}
+.match-bar{width:80%;height:9px;border-radius:6px;background:#ffe0ee;overflow:hidden;margin-top:30px}
+.match-bar i{display:block;height:100%;width:40%;border-radius:6px;
+  background:linear-gradient(90deg,var(--pink),var(--gold));animation:matchBar 1.1s ease-in-out infinite}
+@keyframes matchBar{0%{margin-left:-40%}100%{margin-left:100%}}
+.match-status{margin-top:14px;font-size:13px;font-weight:700;color:var(--purple);text-align:center}
+
+/* ============================================================
+   MÀN HÌNH CHÍNH (Home) — hub các tính năng
+   Phủ lên studio (z 150). Overlay PK/tủ đồ (z 300) phủ lên Home.
+   ============================================================ */
+#home{position:absolute;inset:0;z-index:150;overflow:hidden;
+  background:
+    radial-gradient(circle at 50% 14%,rgba(255,182,213,.55),transparent 52%),
+    radial-gradient(circle at 84% 88%,rgba(192,140,240,.42),transparent 55%),
+    linear-gradient(180deg,#fff2f8 0%,#ffe7f2 60%,#f7e2ff 100%);
+  transition:opacity .32s ease,transform .32s ease}
+#home::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:0;
+  background-image:radial-gradient(rgba(255,120,175,.10) 1px,transparent 1px);background-size:22px 22px}
+#home.hidden{opacity:0;transform:scale(1.05);pointer-events:none}
+
+/* nhân vật look hiện tại — chiếm trọn nền, đứng đáy giữa */
+#homeChar{position:absolute;inset:0;z-index:1;display:flex;align-items:flex-end;justify-content:center;
+  padding-bottom:0;pointer-events:none}
+#homeChar .rg-doll{height:90%;width:auto;aspect-ratio:768/1365;
+  filter:drop-shadow(0 16px 26px rgba(214,98,150,.4));animation:homeBreathe 4.2s ease-in-out infinite}
+@keyframes homeBreathe{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-7px) rotate(.6deg)}}
+/* vũng sáng dưới chân nhân vật */
+#homeChar::after{content:"";position:absolute;bottom:5%;left:50%;transform:translateX(-50%);
+  width:54%;height:30px;border-radius:50%;background:radial-gradient(ellipse,rgba(255,140,195,.5),transparent 72%)}
+
+/* thanh trên: logo + xu */
+.home-top{position:absolute;top:16px;left:16px;right:16px;z-index:3;
+  display:flex;align-items:center;justify-content:space-between}
+.home-logo-sm{font-weight:900;font-style:italic;font-size:23px;letter-spacing:.5px;line-height:1;
+  background:linear-gradient(90deg,var(--pink),var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 2px 6px rgba(255,255,255,.8))}
+.home-logo-sm span{color:var(--purple);-webkit-text-fill-color:var(--purple)}
+.home-coins{display:flex;align-items:center;gap:5px;background:#fff;border:1px solid var(--line);
+  color:var(--txt);padding:6px 14px;border-radius:20px;font-weight:800;font-size:14px;
+  box-shadow:0 2px 8px rgba(255,119,171,.25)}
+
+/* Bộ sưu tập: 1 icon bên trái */
+.home-side{position:absolute;left:14px;top:50%;transform:translateY(-50%);z-index:4;
+  display:flex;flex-direction:column;align-items:center;gap:5px;border:none;cursor:pointer;background:transparent;padding:0}
+.home-side .hs-ic{width:60px;height:60px;border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:30px;
+  background:linear-gradient(145deg,#ffe6b3,#ffc46b);border:3px solid #fff;
+  box-shadow:0 6px 16px rgba(255,184,107,.55);transition:.15s}
+.home-side .hs-ic svg{width:34px;height:34px;display:block;filter:drop-shadow(0 1px 1px rgba(0,0,0,.12))}
+.home-side .hs-lb{font-size:11px;font-weight:800;color:var(--txt);background:#fffd;padding:2px 9px;border-radius:11px;
+  box-shadow:0 2px 6px rgba(255,119,171,.2)}
+.home-side:hover .hs-ic{transform:scale(1.07)}
+.home-side:active .hs-ic{transform:scale(.9)}
+
+/* 2 tính năng chính: icon góc dưới phải */
+.home-actions{position:absolute;right:18px;bottom:22px;z-index:4;display:flex;gap:16px;align-items:flex-end}
+.home-fab{display:flex;flex-direction:column;align-items:center;gap:6px;border:none;cursor:pointer;background:transparent;padding:0}
+.home-fab .fab-ic{width:68px;height:68px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:33px;
+  border:3px solid #fff;box-shadow:0 8px 20px rgba(214,98,150,.5);transition:.15s}
+.home-fab .fab-ic svg{width:40px;height:40px;display:block;filter:drop-shadow(0 1px 1px rgba(0,0,0,.14))}
+.fab-dress .fab-ic{background:linear-gradient(145deg,#ffd3e8,#ff9ec8)}
+.fab-pk .fab-ic{background:linear-gradient(145deg,#cdb6ff,#b07cf0)}
+.home-fab .fab-lb{font-size:12px;font-weight:900;color:var(--txt);background:#fffd;padding:2px 11px;border-radius:12px;
+  box-shadow:0 2px 6px rgba(255,119,171,.28)}
+.home-fab:hover .fab-ic{transform:translateY(-3px) scale(1.05)}
+.home-fab:active .fab-ic{transform:scale(.9)}
